@@ -1,0 +1,8 @@
+[
+	{
+		"id":"add_user_as_director",
+		"label":"Set Nico Nico usernames as director in metadata",
+		"type":"bool",
+		"default":"true"
+	}
+]
