@@ -21,7 +21,7 @@ class NicoAgent(Agent.Movies):
     def search(self, results, media, lang):
         filename = String.Unquote(media.filename)
         try:
-            nico_id = Regex('(?P<id>sm[0-9]+)').search(filename.split('-')[-1]).group('id')
+            nico_id = Regex('(?P<id>sm[0-9]+)').search(filename).group('id')
         except:
             Log('Regex failed: Filename: %s' % filename)
             nico_id = None
