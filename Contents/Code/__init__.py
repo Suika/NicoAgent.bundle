@@ -6,8 +6,10 @@ import json
 from HTMLParser import HTMLParser
 
 def Start():
+    HTTP.CacheTime = CACHE_1MONTH
     HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0'
-	
+    HTTP.Headers['Accept-Encoding'] = 'gzip'
+
 class NicoAgent(Agent.Movies):
     name = 'NicoVideo'
     languages = [Locale.Language.NoLanguage]
@@ -45,40 +47,42 @@ class NicoAgent(Agent.Movies):
             Log(url)
             htmlSource = HTML.ElementFromURL(url)
         except:
-            Log('Could not retrieve data from Iwara for: %s' % metadata.id)
+            Log('NicoVideo, connection failed: %s' % metadata.id)
             htmlSource = None
             exit(1)
         try:
             jsTree = json.loads(htp.unescape(htp.unescape(htmlSource.xpath('//div[@id="js-initial-watch-data"]/@data-api-data')[0])))
         except:
-            exit(1)
+            Log('NicoVideo, json extract failed: %s' % metadata.id)
         try:
             metadata.title = jsTree["video"]["originalTitle"]
         except:
+            Log('NicoVideo, original title extract failed: %s' % metadata.id)
             pass
-
         try:
             genres = jsTree["tags"]
             for genre in genres: metadata.genres.add(genre["name"].strip())
         except:
+            Log('NicoVideo, tags extract failed: %s' % metadata.id)
             pass
         try:
             thumb = jsTree["video"]["largeThumbnailURL"]
             metadata.posters[thumb] = Proxy.Preview(HTTP.Request(thumb).content, sort_order=1)
         except:
+            Log('NicoVideo, thumb extract failed: %s' % metadata.id)
             pass
-
         try:
             metadata.summary = jsTree["video"]["originalDescription"]
         except:
+            Log('NicoVideo, description extract failed: %s' % metadata.id)
             pass
         try:
             date = Datetime.ParseDate(jsTree["video"]["postedDateTime"])
             metadata.originally_available_at = date.date()
             metadata.year = date.year
         except:
+            Log('NicoVideo, date extract failed: %s' % metadata.id)
             pass
-
         try:
             if jsTree["video"]["isAdult"]:
                 metadata.content_rating = "R"
@@ -87,16 +91,16 @@ class NicoAgent(Agent.Movies):
             else:
                 metadata.content_rating = "Unrated"
         except:
+            Log('NicoVideo, rating extract failed: %s' % metadata.id)
             pass
-        
-        # Add YouTube user as director
-        metadata.directors.clear()
 
+        metadata.directors.clear()
         if Prefs['add_user_as_director']:
             try:
                 meta_director = metadata.directors.new()
                 meta_director.name = jsTree["owner"]["nickname"]
                 meta_director.photo = jsTree["owner"]["iconURL"]
             except:
+                Log('NicoVideo, uploader extract failed: %s' % metadata.id)
                 pass
 
