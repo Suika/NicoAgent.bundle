@@ -6,7 +6,7 @@ import json
 from HTMLParser import HTMLParser
 
 def Start():
-    HTTP.CacheTime = CACHE_1MONTH
+    HTTP.CacheTime = CACHE_1MINUTE
     HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0'
     HTTP.Headers['Accept-Encoding'] = 'gzip'
 
@@ -25,7 +25,7 @@ class NicoAgent(Agent.Movies):
         try:
             nico_id = Regex('(?P<id>sm[0-9]+)').search(filename).group('id')
         except:
-            Log('Regex failed: Filename: %s' % filename)
+            Log('Regex failed, filename: %s' % filename)
             nico_id = None
 
         if nico_id and RE_NICO_ID.search(nico_id):
@@ -55,38 +55,38 @@ class NicoAgent(Agent.Movies):
         except:
             Log('NicoVideo, json extract failed: %s' % metadata.id)
         try:
-            metadata.title = jsTree["video"]["originalTitle"]
+            metadata.title = jsTree["video"]["title"]
         except:
             Log('NicoVideo, original title extract failed: %s' % metadata.id)
             pass
         try:
-            genres = jsTree["tags"]
+            genres = jsTree["tag"]["items"]
             for genre in genres: metadata.genres.add(genre["name"].strip())
         except:
             Log('NicoVideo, tags extract failed: %s' % metadata.id)
             pass
         try:
-            thumb = jsTree["video"]["largeThumbnailURL"]
+            thumb = jsTree["video"]["thumbnail"]["ogp"]
             metadata.posters[thumb] = Proxy.Preview(HTTP.Request(thumb).content, sort_order=1)
         except:
             Log('NicoVideo, thumb extract failed: %s' % metadata.id)
             pass
         try:
-            metadata.summary = jsTree["video"]["originalDescription"]
+            metadata.summary = jsTree["video"]["description"]
         except:
             Log('NicoVideo, description extract failed: %s' % metadata.id)
             pass
         try:
-            date = Datetime.ParseDate(jsTree["video"]["postedDateTime"])
+            date = Datetime.ParseDate(jsTree["video"]["registeredAt"])
             metadata.originally_available_at = date.date()
             metadata.year = date.year
         except:
             Log('NicoVideo, date extract failed: %s' % metadata.id)
             pass
         try:
-            if jsTree["video"]["isAdult"]:
+            if jsTree["video"]["rating"]["isAdult"]:
                 metadata.content_rating = "R"
-            elif jsTree["video"]["isR18"]:
+            elif jsTree["video"]["rating"]["isR18"]:
                 metadata.content_rating = "NC-17"
             else:
                 metadata.content_rating = "Unrated"
@@ -103,4 +103,3 @@ class NicoAgent(Agent.Movies):
             except:
                 Log('NicoVideo, uploader extract failed: %s' % metadata.id)
                 pass
-
